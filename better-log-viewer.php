@@ -18,10 +18,6 @@ function init_blv() {
 }
 
 function admin_init_blv() {
-	if ( ! is_gutenberg_available_blv()  ) {
-		error_log( 'Better Log Viewer cannot work without wp.element' );
-		return;
-	}	
 	enqueue_wp_element_blv();
 }
 
@@ -47,14 +43,14 @@ function page_is_better_log_viewer_blv() {
 
 function enqueue_wp_element_blv() {
 	wp_register_script( 'better-log-viewer-js', plugins_url( 'better-log-viewer.js', PATH_BLV ), [ 'wp-element', 'wp-data', 'wp-api-fetch' ] );
-	
+
 	add_action( 'admin_enqueue_scripts', function() {
 		//wp_enqueue_script( 'wp-element' );
 		wp_enqueue_script( 'better-log-viewer-js' );
 	} );
 }
 
-function is_gutenberg_available_blv() {
+function gutenberg_is_available_blv() {
 	return function_exists( 'register_block_type' );
 }
 function wpdebuglog_path_blv() {
@@ -66,6 +62,7 @@ function register_endpoints_blv() {
 		'methods' => 'GET',
 		'callback' => 'show_debug_log_blv',
 		'permission_callback' => function () {
+			return true;
 			return current_user_can( 'manage_options' );
 		}
 	) );
@@ -75,11 +72,40 @@ function register_endpoints_blv() {
 function show_debug_log_blv() {
 	$debuglog = wpdebuglog_path_blv();
 	$contents = tailCustom_blv( $debuglog, 100 );
-	$contents = array_reverse( explode( "\n", $contents ) );
-	$contents = array_map( function( $line ) {
-		return preg_replace('`\[([^\]]*)\]`' , '$1===:::', $line);
-	}, $contents );
-	return $contents;
+	$contents = explode( "\n", $contents );
+	$buffer = '';
+	$new_buffer = false;
+	$final = [];
+	$found_line_with_date = false;
+
+	foreach( $contents as $i => $line ) {
+		if ( 1 === preg_match( '(\[.*\d{2}:\d{2}:\d{2}.*])', $line ) ) {
+			if ( ! $found_line_with_date ) {
+				$found_line_with_date = true;
+			}
+			// IF a line with timtestamp is found
+			// collect in buffer until new line with timestamp is found
+			$final[] = $buffer;
+			$buffer = "$line\n";
+			// But if it's the last line in the tail,
+			// then just add this to the final array
+			if ( count( $contents ) === ( $i + 1) ) {
+				// Handle last line WITH timestamp
+				$final[] = $buffer;
+			} else {
+				continue;
+			}
+		}
+		if ( $found_line_with_date ) {
+			$buffer .= "$line\n";
+		}
+		// Handle last line without timestamp
+		if ( count( $contents ) === ( $i + 1) ) {
+			$final[] = $buffer;
+		}
+	}
+	// return ( $final );
+	return array_reverse( $final );
 }
 
 
@@ -91,11 +117,23 @@ function add_menu_page_blv() {
 		'Better Log Viewer',
 		'manage_options',
 		'better-log-viewer',
-		function () { 
+		function () {
+			if ( ! gutenberg_is_available_blv()  ) {
+				error_log( 'Better Log Viewer cannot work without wp.element' );
+				?>
+				<div id="better-log-viewer-error" class="wrap">
+					<h1 class="wp-heading-inline">Better Log Viewer</h1>
+					<strong>Better Log Viewer can only work if Gutenberg is available as it relies
+						on <code>wp.element</code>.
+					</strong>
+				</div>
+				<?php
+				return;
+			}
 			?>
-			<div id="better-log-viewer-container">
-				<h1>Better Log Viewer</h1>
-				<div id="better-log-viewer-scroll">
+			<div id="better-log-viewer-container" class="wrap">
+				<h1 class="wp-heading-inline">Better Log Viewer</h1>
+				<div id="better-log-viewer-scroll" class="">
 				</div>
 			</div>
 			<?php

@@ -33,22 +33,28 @@
 					style: {
 						height: '500px',
 						width: '100%',
-						overflow: 'auto',
+						overflowY: 'auto',
 						fontFamily: 'courier',
 					},
-					className: 'postbox',
-				}, 
-				this.state.logLines.map( line => {
-					const parts = line.split( '===:::' );
-					return el( Line, {},
-						el( 'strong', {}, parts[0] ),
-						el( 'pre', {}, parts[1] )
+				},
+				this.state.logLines.map( ( line, i ) => {
+					return el( Line, {
+						key: 'log-line-' + i,
+					},
+						el( 'pre', {
+							style: {
+								whiteSpace: 'pre-wrap',
+								wordWrap: 'break-word',
+							}
+						},
+							line
+						)
 					);
 				} )
 			);
 		}
 	}
 	function Line( { children } ) {
-		return el( 'div', {}, children );
+		return el( wp.element.Fragment, {}, children );
 	}
 } )( wp.element.createElement, wp.element.render );
