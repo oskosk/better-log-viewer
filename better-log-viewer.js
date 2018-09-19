@@ -13,6 +13,7 @@
 		constructor( props ) {
 			super( props );
 			this.state = {
+				timeout: 3000,
 				logLines: []
 			};
 		}
@@ -22,7 +23,7 @@
 					wp.apiFetch( { path: '/better-log-viewer/v1/debug.log' } )
 						.then( data => { this.setState( { logLines: data } ) } );
 					timeout();
-				}, 1000);
+				}, this.state.timeout);
 			}
 			timeout();
 		}
@@ -35,9 +36,14 @@
 						overflow: 'auto',
 						fontFamily: 'courier',
 					},
+					className: 'postbox',
 				}, 
 				this.state.logLines.map( line => {
-					return el( Line, {}, line );
+					const parts = line.split( '===:::' );
+					return el( Line, {},
+						el( 'strong', {}, parts[0] ),
+						el( 'pre', {}, parts[1] )
+					);
 				} )
 			);
 		}

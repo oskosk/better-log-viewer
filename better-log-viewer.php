@@ -74,8 +74,12 @@ function register_endpoints_blv() {
 
 function show_debug_log_blv() {
 	$debuglog = wpdebuglog_path_blv();
-	$contents = tailCustom_blv( $debuglog, 100 );	
-	return array_reverse( explode( "\n", $contents ) );
+	$contents = tailCustom_blv( $debuglog, 100 );
+	$contents = array_reverse( explode( "\n", $contents ) );
+	$contents = array_map( function( $line ) {
+		return preg_replace('`\[([^\]]*)\]`' , '$1===:::', $line);
+	}, $contents );
+	return $contents;
 }
 
 
