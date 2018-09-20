@@ -100,8 +100,12 @@ function show_debug_log_blv() {
 			$buffer .= "$line\n";
 		}
 		// Handle last line without timestamp
-		if ( count( $contents ) === ( $i + 1) ) {
+		if ( count( $contents ) === ( $i + 1 ) ) {
 			$final[] = $buffer;
+		}
+		// Handle the case where no line in the tail has timestamp
+		if ( count( $contents ) === ( $i + 1 ) && ! $found_line_with_date ) {
+			$final[] = implode( "\n", $contents );
 		}
 	}
 	// return ( $final );
